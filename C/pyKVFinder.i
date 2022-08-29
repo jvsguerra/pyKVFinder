@@ -151,4 +151,79 @@ char **
    return $result; 
 }
 
+%typemap(out)
+(double **foo) 
+{
+    int nC, nPy, py_err;
+    PyObject *tmp;
+
+    /* Define list length */
+    for (nC = 0; $1[nC] != NULL; nC++);
+
+    /* Create Python list */
+    $result = PyList_New(nC);
+    if (!$result) 
+        return NULL;
+
+    /* Pass C list to Python list */
+    for (nPy = 0; nPy < nC; nPy++) 
+    {
+        if ($1[nPy] == NULL)
+            break;
+
+        /* Convert C string to Python string */
+        tmp = PyFloat_FromDouble( $1[nPy][0] );
+        if (!tmp) 
+            return NULL;
+
+        /* Pass Python string to Python list */
+        py_err = PyList_SetItem($result, nPy, tmp);
+        if (py_err == -1) 
+            return NULL;
+    }
+
+   /* Delete C list */
+   free($1);
+
+   return $result;
+}
+// https://stackoverflow.com/questions/22852356/how-to-convert-c-array-to-python-tuple-or-list-with-swig
+// https://stackoverflow.com/questions/14033387/return-double-from-swig-as-python-list
+//   $result = PyList_New(2); // use however you know the size here
+//   for (int i = 0; i < 2; ++i) {
+//     PyList_SetItem($result, i, PyFloat_FromDouble($1[i]));
+//   }
+//   delete $1; // Important to avoid a leak since you called new
+
+// # %%
+// import _pyKVFinder
+// import pyKVFinder
+// import numpy
+
+// # Parameters
+// probe_out = 4.0
+
+// # Cavity detection
+// atomic = pyKVFinder.read_pdb("pyKVFinder/data/tests/1FMO.pdb")
+// vertices = pyKVFinder.get_vertices(atomic, probe_out=probe_out)
+// ncav, cavities = pyKVFinder.detect(atomic, vertices, probe_out=probe_out)
+
+// # %%
+// # Run _constitutional
+// atominfo = numpy.asarray(([[f"{atom[0]}_{atom[1]}_{atom[2]}", atom[3]] for atom in atomic[:, :4]]))
+// xyzr = atomic[:, 4:].astype(numpy.float64)
+// ncav = int(cavities.max() - 1)
+// sincos = pyKVFinder.grid._get_sincos(vertices)
+// atominfo = atominfo[:, 0].tolist()
+// residues = _pyKVFinder._constitutional(cavities, atominfo, xyzr, vertices[0], sincos, 0.6, 1.4, ncav, 12, True)
+// print(residues)
+
+// # %%
+// # Opening area along cavity
+// def area_along_cavity(cavities: numpy.ndarray):
+//     pass
+
+// # %%
+
+
 %include "pyKVFinder.h"

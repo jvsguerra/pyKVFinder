@@ -2616,3 +2616,23 @@ void _export_openings(char *fn, int *openings, int nxx, int nyy, int nzz,
   // Close file
   fclose(output);
 }
+
+/* Dev section */
+
+double **foo(int n) {
+    double **toReturn;
+    int i, size;
+
+    size = n;
+
+    toReturn = calloc(size, sizeof(double *));
+
+    for (i=0; i<size; i++)
+    {   
+        toReturn[i] = calloc(1, sizeof(double));
+        toReturn[i][0] = i;
+        printf("%d: %lf\n", i, toReturn[i][0]);
+    }
+
+    return toReturn;
+}
