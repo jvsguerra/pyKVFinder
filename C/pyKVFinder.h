@@ -104,4 +104,6 @@ void _export(char *fn, int *cavities, int nx, int ny, int nz, int *surface, int 
 void _export_b(char *fn, int *cavities, int nx, int ny, int nz, int *surface, int nxx, int nyy, int nzz, double *B, int nxxx, int nyyy, int nzzz, double *reference, int ndims, double *sincos, int nvalues, double step, int ncav, int nthreads, int append, int model);
 void _export_openings(char *fn, int *openings, int nxx, int nyy, int nzz, double *reference, int ndims, double *sincos, int nvalues, double step, int nopenings, int nthreads, int append, int model);
 
+/* Dev section */
 double **foo(int n);
+int _filter_depth(int *openings, int size, int *cavities, int nx, int ny, int nz, double *depths, int nxx, int nyy, int nzz, double level, double step, int nthreads);
