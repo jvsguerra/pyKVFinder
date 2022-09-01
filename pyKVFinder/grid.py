@@ -2001,14 +2001,16 @@ def openings(
             * 1: empty space points;
 
             * >=2: cavity points.
-    depths : Optional[numpy.ndarray], optional
+        The empty space points are regions that do not meet the chosen
+        volume cutoff to be considered a cavity.
+    depths : numpy.ndarray, optional
         A numpy.ndarray with depth of cavity points (depth[nx][ny][nz]), by default None. If None, depths is calculated from cavities.
     step : Union[float, int], optional
         Grid spacing (A), by default 0.6.
     openings_cutoff : int, optional
         The minimum number of voxels an opening must have, by default 1.
     selection : Union[List[int], List[str]], optional
-        A list of integer labels or a list of cavity names to be selected, by default None.
+        A list of integer labels or a list of cavity names to be selected, by default None.  If None, all cavities are kept for analysis.
     nthreads : int, optional
         Number of threads, by default None. If None, the number of threads is
         `os.cpu_count() - 1`.
@@ -2097,7 +2099,9 @@ def openings(
                 "`selection` must be a list of strings (cavity names) or integers (cavity labels)."
             )
         # Check if selection includes valid cavity labels
-        if any(x < 2 for x in selection):
+        if any(x < 2 for x in selection) or any(
+            x not in numpy.unique(cavities) for x in selection
+        ):
             raise ValueError(f"Invalid `selection`: {selection}.")
     if nthreads is None:
         nthreads = os.cpu_count() - 1
@@ -2591,15 +2595,139 @@ def export_openings(
     # Export openings
     _export_openings(fn, openings, P1, sincos, step, nopenings, nthreads, append, model)
 
-# FIXME: create a analysis pipeline 
+
+def openings_by_depth(
+    cavities: numpy.ndarray,
+    depths: Optional[numpy.ndarray],
+    percentile: Union[float, int] = 95,
+    step: Union[float, int] = 0.6,
+    selection: Optional[Union[List[int], List[str]]] = None,
+    nthreads: Optional[int] = None,
+    verbose: bool = False,
+) -> Tuple[List[List[float]], numpy.ndarray, Dict[str, Dict[str, float]]]:
+    """[WIP] Identify openings by depth level of the detected cavities and calculate their areas.
+
+    Parameters
+    ----------
+    cavities : numpy.ndarray
+        Cavity points in the 3D grid (cavities[nx][ny][nz]).
+        Cavities array has integer labels in each position, that are:
+
+            * -1: bulk points;
+
+            * 0: biomolecule points;
+
+            * 1: empty space points;
+
+            * >=2: cavity points.
+        The empty space points are regions that do not meet the chosen
+        volume cutoff to be considered a cavity.
+    depths : numpy.ndarray, optional
+        A numpy.ndarray with depth of cavity points (depth[nx][ny][nz]), by default None. If None, depths is calculated from cavities.
+    percentile : Union[float, int], optional
+        Percentile to select non-zero depth values, which must be between 0 and 100 inclusive, by default 95.
+    step : Union[float, int], optional
+        Grid spacing (A), by default 0.6.
+    selection : Union[List[int], List[str]], optional
+        A list of integer labels or a list of cavity names to be selected, by default None. If None, all cavities are kept for analysis.
+    nthreads : int, optional
+        Number of threads, by default None. If None, the number of threads is
+        `os.cpu_count() - 1`.
+    verbose : bool, optional
+        Print extra information to standard output, by default False.
+
+    Returns
+    -------
+    nsegments : int
+        Number of segments per cavity.
+    openings : numpy.ndarray
+        Openings points by depth level in the 3D grid (openings[nx][ny][nz]).
+        Openings array has integer labels in each position, that are:
+
+            * -1: bulk points;
+
+            * 0: cavity, biomolecule or empty space points;
+
+            * >=2: Opening points by depth level.
+    aopenings : Dict[str, Dict[str,float]]
+        A dictionary with area of each detected opening by depth.
+    """
+    from _pyKVFinder import _openings_by_depth, _area
+
+    # Check arguments
+    if type(cavities) not in [numpy.ndarray]:
+        raise TypeError("`cavities` must be a numpy.ndarray.")
+    elif len(cavities.shape) != 3:
+        raise ValueError("`cavities` has the incorrect shape. It must be (nx, ny, nz).")
+    if depths is None:
+        depths, _, _ = depth(cavities, step, selection, nthreads, verbose)
+    elif type(depths) not in [numpy.ndarray]:
+        raise TypeError("`depths` must be a numpy.ndarray.")
+    elif len(depths.shape) != 3:
+        raise ValueError("`depths` has the incorrect shape. It must be (nx, ny, nz).")
+    if type(percentile) not in [float, int]:
+        raise TypeError("`percentile` must be a positive real number.")
+    elif 0 <= percentile <= 100:
+        raise ValueError("`percentile` must be [0, 100].")
+    if selection is not None:
+        # Check selection types
+        if all(isinstance(x, int) for x in selection):
+            pass
+        elif all(isinstance(x, str) for x in selection):
+            selection = [_get_cavity_label(sele) for sele in selection]
+        else:
+            raise TypeError(
+                "`selection` must be a list of strings (cavity names) or integers (cavity labels)."
+            )
+        # Check if selection includes valid cavity labels
+        if any(x < 2 for x in selection) or any(
+            x not in numpy.unique(cavities) for x in selection
+        ):
+            raise ValueError(f"Invalid `selection`: {selection}.")
+    if nthreads is None:
+        nthreads = os.cpu_count() - 1
+    else:
+        if type(nthreads) not in [int]:
+            raise TypeError("`nthreads` must be a positive integer.")
+        elif nthreads <= 0:
+            raise ValueError("`nthreads` must be a positive integer.")
+    if type(verbose) not in [bool]:
+        raise TypeError("`verbose` must be a boolean.")
+
+    # Convert types
+    if type(step) == int:
+        step = float(step)
+
+    # Select cavities
+    if selection is not None:
+        cavities = _select_cavities(cavities, selection)
+
+    # Get cavities shape
+    nx, ny, nz = cavities.shape
+
+    # Define depth levels to be analyzed
+    # FIXME: numpy.where not working properly and ignore when selection is None
+    levels = numpy.round(
+        numpy.arange(0.0, depths[numpy.where(cavities == selection).max(), step]), 2
+    )
+
+    # Get percentile of depths
+    max_level = numpy.percentile(depths[depths > 0.0], percentile)
+
+    # Clip last layer of cavity
+
+
+# FIXME: create a analysis pipeline
 def area_along_cavity(
     cavities: numpy.ndarray, depths: numpy.ndarray, step: float, selection: List[int]
 ):
+    from _pyKVFinder import _openings_by_depth, _area
+
     # Get grid dimensions
     nx, ny, nz = cavities.shape
 
     # Select cavities
-    cavities = pyKVFinder.grid._select_cavities(cavities, selection)
+    cavities = _select_cavities(cavities, selection)
 
     # Set levels to be analyzed
     levels = numpy.round(
@@ -2616,19 +2744,19 @@ def area_along_cavity(
     nopenings = []
     for level in levels:
         # Filter depth level
-        n, openings = _pyKVFinder._openings_per_depth(
+        n, openings = _openings_by_depth(
             nx * ny * nz, cavities, depths, level, step, 12
         )
         openings = openings.reshape(nx, ny, nz)
         nopenings.append(n)
 
         # Calculate volume of levels
-        area = _pyKVFinder._area(openings, step, n, 12)
+        area = _area(openings, step, n, 12)
         areas.append(area)
 
-        # Export to cavity
-        pyKVFinder.export(
-            f"cavities{level:.2f}.pdb", cavities, None, vertices, B=openings
-        )
+        # # Export to cavity
+        # export(
+        #     f"cavities{level:.2f}.pdb", cavities, None, vertices, B=openings
+        # )
 
     return areas, nopenings

@@ -2636,7 +2636,7 @@ double **foo(int n) {
   return toReturn;
 }
 
-int _openings_per_depth(int *openings, int size, int *cavities, int nx, int ny,
+int _openings_by_depth(int *openings, int size, int *cavities, int nx, int ny,
                         int nz, double *depths, int nxx, int nyy, int nzz,
                         double level, double step, int nthreads) {
 

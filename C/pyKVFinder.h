@@ -106,4 +106,4 @@ void _export_openings(char *fn, int *openings, int nxx, int nyy, int nzz, double
 
 /* Dev section */
 double **foo(int n);
-int _openings_per_depth(int *openings, int size, int *cavities, int nx, int ny, int nz, double *depths, int nxx, int nyy, int nzz, double level, double step, int nthreads);
+int _openings_by_depth(int *openings, int size, int *cavities, int nx, int ny, int nz, double *depths, int nxx, int nyy, int nzz, double level, double step, int nthreads);
