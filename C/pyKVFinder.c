@@ -2636,12 +2636,15 @@ double **foo(int n) {
   return toReturn;
 }
 
-int _filter_depth(int *openings, int size, int *cavities, int nx, int ny,
-                   int nz, double *depths, int nxx, int nyy, int nzz, double level,
-                   double step, int nthreads) {
+int _openings_per_depth(int *openings, int size, int *cavities, int nx, int ny,
+                        int nz, double *depths, int nxx, int nyy, int nzz,
+                        double level, double step, int nthreads) {
 
-  int i, j, k, nopenings;
+  int i, j, k, nopenings, *tmp_openings;
   double lower, upper;
+
+  // Create tmp openings
+  tmp_openings = (int *)calloc(size, sizeof(int));
 
   // Set lower and upper limits
   lower = level - (step / 2);
@@ -2655,42 +2658,46 @@ int _filter_depth(int *openings, int size, int *cavities, int nx, int ny,
 #pragma omp parallel default(shared), private(i, j, k)
 #pragma omp for schedule(static)
   for (i = 0; i < size; i++)
-    openings[i] = cavities[i];
+    tmp_openings[i] = cavities[i];
 
     // Filter level points
 #pragma omp parallel default(none),                                            \
-    shared(openings, cavities, depths, nx, ny, nz, lower, upper, level), private(i, j, k)
+    shared(tmp_openings, cavities, depths, nx, ny, nz, lower, upper, level),   \
+    private(i, j, k)
   for (i = 0; i < nx; i++)
     for (j = 0; j < ny; j++)
       for (k = 0; k < nz; k++) {
         // Convert empty space points (1) to bulk points (-1)
         if (cavities[k + nz * (j + (ny * i))] == 1) {
-          openings[k + nz * (j + (ny * i))] = -1;
+          tmp_openings[k + nz * (j + (ny * i))] = -1;
         } else {
           // Convert cavity points (>1)
           if (cavities[k + nz * (j + (ny * i))] > 1) {
             // If depths lesser than level, consider as bulk point (-1)
             if (depths[k + nz * (j + (ny * i))] < lower) {
-              openings[k + nz * (j + (ny * i))] = -1;
+              tmp_openings[k + nz * (j + (ny * i))] = -1;
             } else {
               // If depths geater than level, consider as biomolecule point (0)
               if (depths[k + nz * (j + (ny * i))] >= upper) {
-                openings[k + nz * (j + (ny * i))] = 0;
+                tmp_openings[k + nz * (j + (ny * i))] = 0;
               } else {
-                // If depths equal level, consider as unclustered opening point (1)
-                openings[k + nz * (j + (ny * i))] = 1;
+                // If depths equal level, consider as unclustered opening point
+                // (1)
+                tmp_openings[k + nz * (j + (ny * i))] = 1;
               }
             }
           }
         }
       }
 
-  // Filter surface 
-  // TODO: Do I need to filter surface points?
-  // filter_surface(openings, openings, nx, ny, nz, nthreads);
-
   // Cluster openings with same level
-  nopenings = _cluster(openings, nx, ny, nz, step, 0.0, nthreads);
+  nopenings = _cluster(tmp_openings, nx, ny, nz, step, 0.0, nthreads);
+
+  // Filter surface
+  filter_surface(tmp_openings, openings, nx, ny, nz, nthreads);
+
+  // Free tmp openings
+  free(tmp_openings);
 
   return nopenings;
 }

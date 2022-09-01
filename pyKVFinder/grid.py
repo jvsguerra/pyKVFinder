@@ -1939,7 +1939,7 @@ def _get_opening_label(opening_name: str) -> int:
 def _process_openings(
     raw_openings: numpy.ndarray,
     opening2cavity: numpy.ndarray,
-) -> Dict[str, Dict[str,float]]:
+) -> Dict[str, Dict[str, float]]:
     """Processes arrays of openings' areas.
 
     Parameters
@@ -1985,7 +1985,7 @@ def openings(
     selection: Optional[Union[List[int], List[str]]] = None,
     nthreads: Optional[int] = None,
     verbose: bool = False,
-) -> Tuple[int, numpy.ndarray, Dict[str, Dict[str,float]]]:
+) -> Tuple[int, numpy.ndarray, Dict[str, Dict[str, float]]]:
     """[WIP] Identify openings of the detected cavities and calculate their areas.
 
     Parameters
@@ -2590,3 +2590,45 @@ def export_openings(
 
     # Export openings
     _export_openings(fn, openings, P1, sincos, step, nopenings, nthreads, append, model)
+
+# FIXME: create a analysis pipeline 
+def area_along_cavity(
+    cavities: numpy.ndarray, depths: numpy.ndarray, step: float, selection: List[int]
+):
+    # Get grid dimensions
+    nx, ny, nz = cavities.shape
+
+    # Select cavities
+    cavities = pyKVFinder.grid._select_cavities(cavities, selection)
+
+    # Set levels to be analyzed
+    levels = numpy.round(
+        numpy.arange(0.0, depths[numpy.where(cavities == selection)].max(), step), 2
+    )
+
+    # Get custom percentile
+    maxlevel = numpy.percentile(depths[depths > 0], 95)
+
+    # Clip last layer
+    depths = numpy.clip(depths, 0, maxlevel)
+
+    areas = []
+    nopenings = []
+    for level in levels:
+        # Filter depth level
+        n, openings = _pyKVFinder._openings_per_depth(
+            nx * ny * nz, cavities, depths, level, step, 12
+        )
+        openings = openings.reshape(nx, ny, nz)
+        nopenings.append(n)
+
+        # Calculate volume of levels
+        area = _pyKVFinder._area(openings, step, n, 12)
+        areas.append(area)
+
+        # Export to cavity
+        pyKVFinder.export(
+            f"cavities{level:.2f}.pdb", cavities, None, vertices, B=openings
+        )
+
+    return areas, nopenings
