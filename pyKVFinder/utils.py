@@ -257,7 +257,7 @@ def read_xyz(
             line = line.split()
             if len(line) == 4:
                 # Get PDB information
-                atom_symbol = line[0]
+                atom_symbol = line[0].upper()
                 x = float(line[1])
                 y = float(line[2])
                 z = float(line[3])
