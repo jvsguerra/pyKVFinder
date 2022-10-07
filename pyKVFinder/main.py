@@ -936,3 +936,65 @@ def run_workflow(
     )
 
     return results
+
+
+class Molecule(object):
+    def __init__(
+        self,
+        molecule: Union[str, pathlib.Path],
+        vdw: Union[str, pathlib.Path] = None,
+        step: Union[str, pathlib.Path] = 0.6,
+        probe_in: float = 1.4,
+        surface: str = "SES",
+        model: Optional[int] = None,
+        padding: Optional[float] = None,
+        verbose: bool = False
+        ):
+        self.step = step
+        self.probe = probe_in
+        self.surface = surface
+        self.verbose = verbose
+
+        if padding is None:
+            self._padding = (self.atomic.ptp(axis=0).max() / 10).round(decimals=1)
+
+        if verbose:
+            print("> Loading van der Waals radii")
+        if vdw is not None:
+            self.vdw = read_vdw(vdw)
+        else:
+            self.vdw = read_vdw(VDW)
+        
+        if verbose:
+            print("> Reading molecule coordinates")
+        if molecule.endswith(".pdb"):
+            self.atomic = read_pdb(molecule, self.vdw, model)
+        elif molecule.endswith(".xyz"):
+            self.atomic = read_xyz(molecule, self.vdw)
+        else:
+            raise TypeError("`molecule` must have .pdb or .xyz extension.")
+        
+        if verbose:
+            print("> Calculating 3D grid")
+        self.vertices = get_vertices(self.atomic, padding, step)
+
+        if verbose:
+            print("")
+
+        @property
+        def dim(self):
+            return _get_dimensions(self.vertices, self.step)
+        
+        @property
+        def rotation(self):
+            return _get_sincos(self.vertices)
+        
+        
+
+class Detection():
+    def __init__():
+        pass
+
+class Characterization():
+    def __init__():
+        pass
