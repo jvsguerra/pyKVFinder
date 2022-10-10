@@ -111,3 +111,4 @@ int _openings_by_depth(int *openings, int size, int *cavities, int nx, int ny, i
 /* Molecule */
 void vdw(int *molecule, int size, int nx, int ny, int nz, double *atoms, int natoms, int xyzr, double *reference, int ndims, double *sincos, int nvalues, double step, int nthreads);
 void save_molecule(char *fn, int *grid, int nx, int ny, int nz, double *reference, int ndims, double *sincos, int nvalues, double step, int nthreads, int append, int model);
+void scan(int *grid, int nx, int ny, int nz, double *atoms, int natoms, int xyzr, double *reference, int ndims, double *sincos, int nvalues, double step, double probe, int nthreads);

@@ -1101,6 +1101,11 @@ class Molecule(object):
         save_molecule(fn, self.molecule, self.vertices[0], self.rotation, self.step, self.nthreads, append, model)
 
 
+class Surface(object):
+    def __init__(self, molecule: Molecule, probe: float = 1.4, surface: str = "SES"):
+        from _pyKVFinder import scan
+
+
 class Detection:
     def __init__():
         pass
