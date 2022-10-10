@@ -107,3 +107,7 @@ void _export_openings(char *fn, int *openings, int nxx, int nyy, int nzz, double
 /* Dev section */
 double **foo(int n);
 int _openings_by_depth(int *openings, int size, int *cavities, int nx, int ny, int nz, double *depths, int nxx, int nyy, int nzz, double level, double step, int nthreads);
+
+/* Molecule */
+void vdw(int *molecule, int size, int nx, int ny, int nz, double *atoms, int natoms, int xyzr, double *reference, int ndims, double *sincos, int nvalues, double step, int nthreads);
+void save_molecule(char *fn, int *grid, int nx, int ny, int nz, double *reference, int ndims, double *sincos, int nvalues, double step, int nthreads, int append, int model);

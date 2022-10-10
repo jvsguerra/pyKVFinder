@@ -63,7 +63,7 @@ def get_vertices(
         raise ValueError("`atomic` has incorrect shape. It must be (n, 8).")
     elif numpy.asarray(atomic).shape[1] != 8:
         raise ValueError("`atomic` has incorrect shape. It must be (n, 8).")
-    if type(probe_out) not in [int, float]:
+    if type(probe_out) not in [int, float, numpy.float64]:
         raise TypeError("`probe_out` must be a non-negative real number.")
     elif probe_out < 0.0:
         raise ValueError("`probe_out` must be a non-negative real number.")
@@ -189,7 +189,7 @@ def get_vertices_from_file(
         raise TypeError("`probe_in` must be a non-negative real number.")
     elif probe_in < 0.0:
         raise ValueError("`probe_in` must be a non-negative real number.")
-    if type(probe_out) not in [float, int]:
+    if type(probe_out) not in [int, float, numpy.float64]:
         raise TypeError("`probe_out` must be a non-negative real number.")
     elif probe_out < 0.0:
         raise ValueError("`probe_out` must be a non-negative real number.")
@@ -685,7 +685,7 @@ def detect(
         raise TypeError("`probe_in` must be a non-negative real number.")
     elif probe_in < 0.0:
         raise ValueError("`probe_in` must be a non-negative real number.")
-    if type(probe_out) not in [float, int]:
+    if type(probe_out) not in [int, float, numpy.float64]:
         raise TypeError("`probe_out` must be a non-negative real number.")
     elif probe_out < 0.0:
         raise ValueError("`probe_out` must be a non-negative real number.")
@@ -2065,7 +2065,7 @@ def openings(
     ValueError
         `nthreads` must be a positive integer.
     TypeError
-        `verbose` must be a boolean
+        `verbose` must be a boolean.
     """
     from _pyKVFinder import _openings, _area, _openings2cavities
 

@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import math
 import numpy
 import pathlib
 from datetime import datetime
@@ -28,7 +29,8 @@ from .grid import (
     export,
 )
 
-__all__ = ["run_workflow", "pyKVFinderResults"]
+
+__all__ = ["run_workflow", "pyKVFinderResults", "Molecule"]
 
 VDW = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data/vdw.dat")
 
@@ -101,9 +103,9 @@ def cli() -> None:
     if args.ligand:
         if args.verbose:
             print("> Reading ligand coordinates")
-        if args.ligand.endswith('.pdb'):
+        if args.ligand.endswith(".pdb"):
             latomic = read_pdb(args.ligand, vdw)
-        elif args.ligand.endswith('.xyz'):
+        elif args.ligand.endswith(".xyz"):
             latomic = read_xyz(args.ligand, vdw)
     else:
         latomic = None
@@ -658,7 +660,7 @@ def run_workflow(
     Parameters
     ----------
     input : Union[str, pathlib.Path]
-        A path to a target structure file, in PDB or XYZ format, to detect and characterize cavities. 
+        A path to a target structure file, in PDB or XYZ format, to detect and characterize cavities.
     ligand : Union[str, pathlib.Path], optional
         A path to ligand file, in PDB or XYZ format, by default None.
     vdw : Union[str, pathlib.Path], optional
@@ -806,19 +808,19 @@ def run_workflow(
 
     if verbose:
         print("> Reading PDB coordinates")
-    if input.endswith('.pdb'):
+    if input.endswith(".pdb"):
         atomic = read_pdb(input, vdw, model)
-    elif input.endswith('.xyz'):
+    elif input.endswith(".xyz"):
         atomic = read_xyz(input, vdw)
     else:
         raise TypeError("`target` must have .pdb or .xyz extension.")
-    
+
     if ligand:
         if verbose:
             print("> Reading ligand coordinates")
-        if ligand.endswith('.pdb'):
+        if ligand.endswith(".pdb"):
             latomic = read_pdb(ligand, vdw)
-        elif ligand.endswith('.xyz'):
+        elif ligand.endswith(".xyz"):
             latomic = read_xyz(ligand, vdw)
         else:
             raise TypeError("`ligand` must have .pdb or .xyz extension.")
@@ -944,57 +946,166 @@ class Molecule(object):
         molecule: Union[str, pathlib.Path],
         vdw: Union[str, pathlib.Path] = None,
         step: Union[str, pathlib.Path] = 0.6,
-        probe_in: float = 1.4,
-        surface: str = "SES",
-        model: Optional[int] = None,
         padding: Optional[float] = None,
-        verbose: bool = False
-        ):
-        self.step = step
-        self.probe = probe_in
-        self.surface = surface
+        model: Optional[int] = None,
+        nthreads: Optional[int] = None,
+        verbose: bool = False,
+    ):
+        from _pyKVFinder import vdw as pyvdw
+
+        # Step
+        if type(step) not in [int, float]:
+            raise TypeError("`step` must be a postive real number.")
+        elif step <= 0.0:
+            raise ValueError("`step` must be a positive real number.")
+        else:
+            self._step = step
+
+        # Number of threads
+        if nthreads is not None:
+            if type(nthreads) not in [int]:
+                raise TypeError("`nthreads` must be a positive integer.")
+            elif nthreads <= 0:
+                raise ValueError("`nthreads` must be a positive integer.")
+            else:
+                self.nthreads = nthreads
+        else:
+            self.nthreads = os.cpu_count() - 1
+
+        # Verbose
         self.verbose = verbose
 
-        if padding is None:
-            self._padding = (self.atomic.ptp(axis=0).max() / 10).round(decimals=1)
-
-        if verbose:
+        # van der Waals radii
+        if self.verbose:
             print("> Loading van der Waals radii")
         if vdw is not None:
             self.vdw = read_vdw(vdw)
         else:
             self.vdw = read_vdw(VDW)
-        
-        if verbose:
+
+        # Atomic information
+        if self.verbose:
             print("> Reading molecule coordinates")
         if molecule.endswith(".pdb"):
-            self.atomic = read_pdb(molecule, self.vdw, model)
+            self._atomic = read_pdb(molecule, self.vdw, model)
         elif molecule.endswith(".xyz"):
-            self.atomic = read_xyz(molecule, self.vdw)
+            self._atomic = read_xyz(molecule, self.vdw)
         else:
             raise TypeError("`molecule` must have .pdb or .xyz extension.")
-        
-        if verbose:
+
+        # Padding
+        if padding is not None:
+            if type(padding) not in [int, float]:
+                raise TypeError("`step` must be a postive real number.")
+            elif padding < 0.0:
+                raise TypeError("`step` must be a postive real number.")
+            else:
+                self._padding = padding
+        else:
+            self._padding = (
+                self._atomic[:, 4:7].astype(float).ptp(axis=0).max() / 10
+            ).round(decimals=1)
+
+        # 3D grid
+        if self.verbose:
             print("> Calculating 3D grid")
-        self.vertices = get_vertices(self.atomic, padding, step)
+        self._vertices = get_vertices(self._atomic, self._padding, self._step)
+        self._dim = _get_dimensions(self._vertices, self._step)
+        self._rotation = _get_sincos(self._vertices)
+        if self.verbose:
+            print(f"p1: {self.vertices[0]}")
+            print(f"p2: {self.vertices[1]}")
+            print(f"p3: {self.vertices[2]}")
+            print(f"p4: {self.vertices[3]}")
+            print("nx: {}, ny: {}, nz: {}".format(*self.dim))
+            print("sina: {}, sinb: {}, cosa: {}, cosb: {}".format(*self.rotation))
 
-        if verbose:
-            print("")
+        # Molecule to grid
+        if self.verbose:
+            print("> Inserting atoms with van der Waals radii into 3D grid")
+        self._molecule = pyvdw(
+            math.prod(self._dim),
+            self._dim[0],
+            self._dim[1],
+            self._dim[2],
+            self._atomic[:, 4:].astype(numpy.float64),
+            self._vertices[0],
+            self._rotation,
+            self._step,
+            self.nthreads,
+        ).reshape(self._dim[0], self._dim[1], self._dim[2])
 
-        @property
-        def dim(self):
-            return _get_dimensions(self.vertices, self.step)
-        
-        @property
-        def rotation(self):
-            return _get_sincos(self.vertices)
-        
-        
+    @property
+    def molecule(self):
+        return self._molecule
 
-class Detection():
+    @property
+    def step(self):
+        return self._step
+
+    @property
+    def padding(self):
+        return self._padding
+
+    @property
+    def vertices(self):
+        return self._vertices
+
+    @property
+    def atomic(self):
+        return self._atomic
+
+    @property
+    def nx(self):
+        return self._dim[0]
+
+    @property
+    def ny(self):
+        return self._dim[1]
+
+    @property
+    def nz(self):
+        return self._dim[2]
+
+    @property
+    def dim(self):
+        return self._dim
+
+    @property
+    def rotation(self):
+        return self._rotation
+
+    def preview(self, **kwargs):
+        # if self.molecule is not None:
+        #     import matplotlib.pyplot as plt
+        #     fig = plt.figure()
+        #     ax = fig.add_subplot(111, projection="3d")
+        #     ax.voxels(self.molecule == 0, **kwargs)
+        #     fig.show()
+        
+        if self.molecule is not None:
+            import plotly.express
+            x, y, z = numpy.nonzero(self.molecule == 0)
+            fig = plotly.express.scatter_3d(x=x, y=y, z=z)
+            fig.update_layout(
+                scene_xaxis_showticklabels=False,
+                scene_yaxis_showticklabels=False,
+                scene_zaxis_showticklabels=False,
+            )
+            fig.show()
+
+    def save(self, fn: Union[str, pathlib.Path] = "molecule.pdb", append: bool = False, model: Optional[int] = None):
+        from _pyKVFinder import save_molecule
+        if model is None:
+            model = 1
+        save_molecule(fn, self.molecule, self.vertices[0], self.rotation, self.step, self.nthreads, append, model)
+
+
+class Detection:
     def __init__():
         pass
 
-class Characterization():
+
+class Characterization:
     def __init__():
         pass

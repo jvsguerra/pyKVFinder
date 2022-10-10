@@ -16,6 +16,9 @@
 /* Receptor grid */
 %apply (int* ARGOUT_ARRAY1, int DIM1) {(int* receptor, int size)}
 
+/* Molecule grid */
+%apply (int* ARGOUT_ARRAY1, int DIM1) {(int* molecule, int size)}
+
 /* Cavities grid */
 %apply (int* ARGOUT_ARRAY1, int DIM1) {(int* PI, int size)}
 %apply (int* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(int *cavities, int nx, int ny, int nz)}
