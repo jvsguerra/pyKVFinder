@@ -944,14 +944,34 @@ class Molecule(object):
     def __init__(
         self,
         molecule: Union[str, pathlib.Path],
-        vdw: Union[str, pathlib.Path] = None,
+        radii: Union[str, pathlib.Path] = None,
         step: Union[str, pathlib.Path] = 0.6,
-        padding: Optional[float] = None,
         model: Optional[int] = None,
         nthreads: Optional[int] = None,
         verbose: bool = False,
     ):
-        from _pyKVFinder import vdw as pyvdw
+        # Attributes
+        self._grid = None
+        self._padding = None
+        self._probe = None
+        self._representation = None
+        self._vertices = None
+        self._dim = None
+        self._rotation = None
+        self.verbose = verbose
+
+        # Molecule
+        if type(molecule) not in [str, pathlib.Path]:
+            raise TypeError("`fn` must be a string or a pathlib.Path.")
+        self._molecule = os.path.realpath(molecule)
+
+        # van der Waals radii
+        if self.verbose:
+            print("> Loading van der Waals radii")
+        if radii is not None:
+            self._radii = read_vdw(radii)
+        else:
+            self._radii = read_vdw(VDW)
 
         # Step
         if type(step) not in [int, float]:
@@ -960,6 +980,16 @@ class Molecule(object):
             raise ValueError("`step` must be a positive real number.")
         else:
             self._step = step
+
+        # Atomic information
+        if self.verbose:
+            print("> Reading molecule coordinates")
+        if molecule.endswith(".pdb"):
+            self._atomic = read_pdb(molecule, self.radii, model)
+        elif molecule.endswith(".xyz"):
+            self._atomic = read_xyz(molecule, self.radii)
+        else:
+            raise TypeError("`molecule` must have .pdb or .xyz extension.")
 
         # Number of threads
         if nthreads is not None:
@@ -972,100 +1002,64 @@ class Molecule(object):
         else:
             self.nthreads = os.cpu_count() - 1
 
-        # Verbose
-        self.verbose = verbose
-
-        # van der Waals radii
-        if self.verbose:
-            print("> Loading van der Waals radii")
-        if vdw is not None:
-            self.vdw = read_vdw(vdw)
-        else:
-            self.vdw = read_vdw(VDW)
-
-        # Atomic information
-        if self.verbose:
-            print("> Reading molecule coordinates")
-        if molecule.endswith(".pdb"):
-            self._atomic = read_pdb(molecule, self.vdw, model)
-        elif molecule.endswith(".xyz"):
-            self._atomic = read_xyz(molecule, self.vdw)
-        else:
-            raise TypeError("`molecule` must have .pdb or .xyz extension.")
-
-        # Padding
-        if padding is not None:
-            if type(padding) not in [int, float]:
-                raise TypeError("`step` must be a postive real number.")
-            elif padding < 0.0:
-                raise TypeError("`step` must be a postive real number.")
-            else:
-                self._padding = padding
-        else:
-            self._padding = (
-                self._atomic[:, 4:7].astype(float).ptp(axis=0).max() / 10
-            ).round(decimals=1)
-
-        # 3D grid
-        if self.verbose:
-            print("> Calculating 3D grid")
-        self._vertices = get_vertices(self._atomic, self._padding, self._step)
-        self._dim = _get_dimensions(self._vertices, self._step)
-        self._rotation = _get_sincos(self._vertices)
-        if self.verbose:
-            print(f"p1: {self.vertices[0]}")
-            print(f"p2: {self.vertices[1]}")
-            print(f"p3: {self.vertices[2]}")
-            print(f"p4: {self.vertices[3]}")
-            print("nx: {}, ny: {}, nz: {}".format(*self.dim))
-            print("sina: {}, sinb: {}, cosa: {}, cosb: {}".format(*self.rotation))
-
-        # Molecule to grid
-        if self.verbose:
-            print("> Inserting atoms with van der Waals radii into 3D grid")
-        self._molecule = pyvdw(
-            math.prod(self._dim),
-            self._dim[0],
-            self._dim[1],
-            self._dim[2],
-            self._atomic[:, 4:].astype(numpy.float64),
-            self._vertices[0],
-            self._rotation,
-            self._step,
-            self.nthreads,
-        ).reshape(self._dim[0], self._dim[1], self._dim[2])
-
     @property
     def molecule(self):
         return self._molecule
+
+    @property
+    def radii(self):
+        return self._radii
 
     @property
     def step(self):
         return self._step
 
     @property
-    def padding(self):
-        return self._padding
+    def atomic(self):
+        return self._atomic
+
+    @property
+    def xyzr(self):
+        return self._atomic[:, 4:].astype(numpy.float64)
 
     @property
     def vertices(self):
         return self._vertices
 
     @property
-    def atomic(self):
-        return self._atomic
+    def p1(self):
+        if self._vertices is not None:
+            return self._vertices[0]
+
+    @property
+    def p2(self):
+        if self._vertices is not None:
+            return self._vertices[1]
+
+    @property
+    def p3(self):
+        if self._vertices is not None:
+            return self._vertices[2]
+
+    @property
+    def p4(self):
+        if self._vertices is not None:
+            return self._vertices[3]
 
     @property
     def nx(self):
-        return self._dim[0]
+        if self._dim is not None:
+            return self._dim[0]
 
     @property
     def ny(self):
-        return self._dim[1]
+        if self._dim is not None:
+            return self._dim[1]
 
     @property
     def nz(self):
-        return self._dim[2]
+        if self._dim is not None:
+            return self._dim[2]
 
     @property
     def dim(self):
@@ -1075,18 +1069,132 @@ class Molecule(object):
     def rotation(self):
         return self._rotation
 
+    @property
+    def padding(self):
+        return self._padding
+
+    @property
+    def probe(self):
+        return self._probe
+
+    @property
+    def representation(self):
+        return self._representation
+
+    @property
+    def grid(self):
+        return self._grid
+
+    def _set_grid(self, padding: Optional[float]):
+        # Padding
+        if padding is not None:
+            if type(padding) not in [int, float, numpy.float64]:
+                raise TypeError("`step` must be a non-negative real number.")
+            elif padding < 0.0:
+                raise ValueError("`step` must be a non-negative real number.")
+            else:
+                self._padding = padding
+        else:
+            self._padding = self._get_padding()
+
+        # 3D grid
+        if self.verbose:
+            print("> Calculating 3D grid")
+        self._vertices = get_vertices(self.atomic, self.padding, self.step)
+        self._dim = _get_dimensions(self.vertices, self.step)
+        self._rotation = _get_sincos(self.vertices)
+        if self.verbose:
+            print(f"p1: {self.vertices[0]}")
+            print(f"p2: {self.vertices[1]}")
+            print(f"p3: {self.vertices[2]}")
+            print(f"p4: {self.vertices[3]}")
+            print("nx: {}, ny: {}, nz: {}".format(*self.dim))
+            print("sina: {}, sinb: {}, cosa: {}, cosb: {}".format(*self.rotation))
+
+    def _get_padding(self):
+        return (self._atomic[:, 4:7].astype(float).ptp(axis=0).max() / 10).round(
+            decimals=1
+        )
+
+    def vdw(self, padding: Optional[float] = None):
+        from _pyKVFinder import _fill_receptor as fill
+
+        # Attributes
+        self._representation = "vdW"
+        self._probe = None
+
+        # Define 3D grid
+        self._set_grid(padding)
+
+        # van der Waals atoms (hard sphere model) to grid
+        if self.verbose:
+            print("> Inserting atoms with van der Waals radii into 3D grid")
+        self._grid = fill(
+            math.prod(self.dim),
+            self.nx,
+            self.ny,
+            self.nz,
+            self.xyzr,
+            self.p1,
+            self.rotation,
+            self.step,
+            0.0,
+            False,
+            self.nthreads,
+            self.verbose,
+        ).reshape(self.nx, self.ny, self.nz)
+
+    def surface(
+        self, probe: float = 1.4, surface: str = "SES", padding: Optional[float] = None
+    ):
+        from _pyKVFinder import _fill_receptor as fill
+
+        # Probe
+        if type(probe) not in [int, float, numpy.float64]:
+            raise TypeError("`probe_out` must be a non-negative real number.")
+        elif probe < 0.0:
+            raise ValueError("`probe_out` must be a non-negative real number.")
+        self._probe = probe
+
+        # Surface
+        if surface == "SES":
+            if self.verbose:
+                print("> Surface representation: Solvent Excluded Surface (SES).")
+            self._representation = surface
+            surface = True
+        elif surface == "SAS":
+            if self.verbose:
+                print("> Surface representation: Solvent Accessible Surface (SAS).")
+            self._representation = surface
+            surface = False
+        else:
+            raise ValueError(f"`surface` must be SAS or SES, not {surface}.")
+
+        # Define 3D grid
+        self._set_grid(padding)
+
+        # Molecular surface (SES or SAS) to grid
+        self._grid = fill(
+            math.prod(self.dim),
+            self.nx,
+            self.ny,
+            self.nz,
+            self.xyzr,
+            self.p1,
+            self.rotation,
+            self.step,
+            self.probe,
+            surface,
+            self.nthreads,
+            self.verbose,
+        ).reshape(self.nx, self.ny, self.nz)
+
     def preview(self, **kwargs):
-        # if self.molecule is not None:
-        #     import matplotlib.pyplot as plt
-        #     fig = plt.figure()
-        #     ax = fig.add_subplot(111, projection="3d")
-        #     ax.voxels(self.molecule == 0, **kwargs)
-        #     fig.show()
-        
-        if self.molecule is not None:
-            import plotly.express
-            x, y, z = numpy.nonzero(self.molecule == 0)
-            fig = plotly.express.scatter_3d(x=x, y=y, z=z)
+        if self.grid is not None:
+            from plotly.express import scatter_3d
+
+            x, y, z = numpy.nonzero(self.grid == 0)
+            fig = scatter_3d(x=x, y=y, z=z, **kwargs)
             fig.update_layout(
                 scene_xaxis_showticklabels=False,
                 scene_yaxis_showticklabels=False,
@@ -1094,23 +1202,54 @@ class Molecule(object):
             )
             fig.show()
 
-    def save(self, fn: Union[str, pathlib.Path] = "molecule.pdb", append: bool = False, model: Optional[int] = None):
+    def save(
+        self,
+        fn: Union[str, pathlib.Path] = "molecule.pdb",
+        model: Optional[int] = None,
+        append: bool = False,
+    ):
         from _pyKVFinder import save_molecule
-        if model is None:
+
+        # Filename (fn)
+        if type(fn) not in [str, pathlib.Path]:
+            raise TypeError("`fn` must be a string or a pathlib.Path.")
+        os.makedirs(os.path.abspath(os.path.dirname(fn)), exist_ok=True)
+
+        # Model
+        if model is not None:
+            if type(model) not in [int]:
+                raise TypeError("`model` must be an integer.")
+        else:
             model = 1
-        save_molecule(fn, self.molecule, self.vertices[0], self.rotation, self.step, self.nthreads, append, model)
 
+        # Append
+        if type(append) not in [bool]:
+            raise TypeError("`append` must be a boolean.")
 
-class Surface(object):
-    def __init__(self, molecule: Molecule, probe: float = 1.4, surface: str = "SES"):
-        from _pyKVFinder import scan
+        # Save grid to PDB file
+        save_molecule(
+            fn,
+            self.grid,
+            self.vertices[0],
+            self.rotation,
+            self.step,
+            self.nthreads,
+            append,
+            model,
+        )
 
 
 class Detection:
     def __init__():
         pass
 
+    def run(self):
+        pass
+
 
 class Characterization:
     def __init__():
+        pass
+
+    def run():
         pass

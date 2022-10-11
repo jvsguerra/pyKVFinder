@@ -2705,38 +2705,8 @@ int _openings_by_depth(int *openings, int size, int *cavities, int nx, int ny,
 /* New API */
 
 /*
- * Function: vdw
- * -------------
- *
- * Insert atoms with corresponding van der Waals radii into a 3D grid
- *
- * molecule: 3D grid
- * size: number of voxels
- * nx: x grid units
- * ny: y grid units
- * nz: z grid units
- * atoms: xyz coordinates and radii
- * natoms: number of atoms
- * xyzr: number of data per atom (4: xyzr)
- * reference: xyz coordinates of 3D grid origin
- * ndims: number of coordinates (3: xyz)
- * sincos: sin and cos of 3D grid angles
- * nvalues: number of sin and cos (sina, cosa, sinb, cosb)
- * step: 3D grid spacing (A)
- * nthreads: number of threads for OpenMP
- *
- */
-void vdw(int *molecule, int size, int nx, int ny, int nz, double *atoms,
-         int natoms, int xyzr, double *reference, int ndims, double *sincos,
-         int nvalues, double step, int nthreads) {
-  igrid(molecule, size);
-  fill(molecule, nx, ny, nz, atoms, natoms, xyzr, reference, ndims, sincos,
-       nvalues, step, 0.0, nthreads);
-}
-
-/*
- * Function: _export_b
- * -------------------
+ * Function: save_molecule
+ * -----------------------
  *
  * Export cavities with a variable as B-factor to PDB file
  *
@@ -2824,71 +2794,4 @@ void save_molecule(char *fn, int *grid, int nx, int ny, int nz,
     fprintf(output, "END\n");
   // Close file
   fclose(output);
-}
-
-/*
- * Function: scan
- * --------------
- *
- * Insert atoms with a probe addition inside a 3D grid
- *
- * grid: 3D grid
- * nx: x grid units
- * ny: y grid units
- * nz: z grid units
- * atoms: xyz coordinates and radii of input pdb
- * natoms: number of atoms
- * xyzr: number of data per atom (4: xyzr)
- * reference: xyz coordinates of 3D grid origin
- * ndims: number of coordinates (3: xyz)
- * sincos: sin and cos of 3D grid angles
- * nvalues: number of sin and cos (sina, cosa, sinb, cosb)
- * step: 3D grid spacing (A)
- * probe: Probe size (A)
- * nthreads: number of threads for OpenMP
- *
- */
-void scan(int *grid, int nx, int ny, int nz, double *atoms, int natoms,
-          int xyzr, double *reference, int ndims, double *sincos, int nvalues,
-          double step, double probe, int nthreads) {
-  int i, j, k, x, y, z, atom;
-  double distance, H;
-
-  // Set number of processes in OpenMP
-  omp_set_num_threads(nthreads);
-  omp_set_nested(1);
-
-#pragma omp parallel default(none)                                             \
-    shared(grid, reference, sincos, step, nx, ny, nz, probe),                  \
-    private(i, j, k, x, y, z, H, distance)
-  {
-#pragma omp for schedule(static) collapse(3) ordered nowait
-    for (i = 0; i < nx; i++)
-      for (j = 0; j < ny; j++)
-        for (k = 0; k < nz; k++) {
-          if (grid[k + nz * (j + (ny * i))] == 0) {
-            H = (probe) / step;
-            for (x = floor(i - H); x <= ceil(i + H); x++)
-              for (y = floor(j - H); y <= ceil(j + H); y++)
-                for (z = floor(k - H); z <= ceil(k + H); z++) {
-                  distance =
-                      sqrt(pow(i - x, 2) + pow(j - y, 2) + pow(k - z, 2));
-                  if (x >= 0 && x < nx && y >= 0 && y < ny && z >= 0 &&
-                      z < nz) {
-                    if (grid[z + nz * (y + (ny * x))] == 1)
-                      grid[z + nz * (y + (ny * x))] = -1;
-                  }
-                }
-          }
-        }
-  }
-
-#pragma omp parallel default(shared) private(i, j, k)
-#pragma omp for schedule(static) collapse(3) nowait
-  for (i = 0; i < nx; i++)
-    for (j = 0; j < ny; j++)
-      for (k = 0; k < nz; k++)
-        // Remove points based on tag
-        if (grid[k + nz * (j + (ny * i))] == -1)
-          grid[k + nz * (j + (ny * i))] = 0;
 }
