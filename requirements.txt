@@ -1,3 +1,4 @@
 toml>=0.10.2
-numpy>=1.23.2
+numpy>=1.23.3
 matplotlib>=3.5.3
+plotly>=8.1.0
