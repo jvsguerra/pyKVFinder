@@ -5,7 +5,7 @@
 Issues
 ======
 
-pyKVFinder package uses of GitHub for project management. Please help us by reporting any problems or requests.
+pyKVFinder package uses GitHub for project management. Please help us by reporting any problems or requests.
 
 On `Issues <https://github.com/LBC-LNBio/pyKVFinder/issues>`_ page, you can file a:
 
@@ -38,6 +38,11 @@ Citing pyKVFinder
 =================
 
 Guerra, J.V.d., Ribeiro-Filho, H.V., Jara, G.E. et al. pyKVFinder: an efficient and integrable Python package for biomolecular cavity detection and characterization in data science. BMC Bioinformatics 22, 607 (2021). `https://doi.org/10.1186/s12859-021-04519-4 <https://doi.org/10.1186/s12859-021-04519-4>`_.
+
+Funding
+=======
+
+This work was supported by the Fundação de Amparo à Pesquisa do Estado de São Paulo (FAPESP) [Grant Number 2018/00629-0], Conselho Nacional de Desenvolvimento Científico e Tecnológico (CNPq) [Grant Number 350244/2020-0], and Brazilian Center for Research in Energy and Materials (CNPEM).
 
 License
 =======
