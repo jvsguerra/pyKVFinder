@@ -92,6 +92,7 @@ jobs:
         env:
           CIBW_BUILD: ${{matrix.pyver}}-${{matrix.arch}}
           CIBW_ARCHS_WINDOWS: AMD64 x86
+          CIBW_BEFORE_BUILD: pip install -U pip setuptools wheel
 
       - uses: actions/upload-artifact@v3
         with:
