@@ -1,6 +1,9 @@
 name: Build and deploy
 
 on:
+  push:
+    branches:
+      - master
   release:
     types: [published]
 
@@ -69,3 +72,27 @@ jobs:
         run: |
           pip install -U twine
           twine upload dist/*
+
+  windows:
+    runs-on: windows-latest
+    if: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Might want to add win32, untested at the moment.
+        arch: [win_amd64]
+        pyver: [cp38, cp39, cp310, cp311]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.0
+        env:
+          CIBW_BUILD: ${{matrix.pyver}}-${{matrix.arch}}
+          CIBW_ARCHS_WINDOWS: AMD64 x86
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
