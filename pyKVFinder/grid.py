@@ -980,6 +980,97 @@ def detect(
     return ncav, cavities.reshape(nx, ny, nz)
 
 
+def _detect_kawabata_go(
+    fn: Union[str, pathlib.Path],
+    vdw: Optional[Dict[str, Dict[str, float]]] = None,
+    model: Optional[int] = None,
+    step: Union[float, int] = 0.6,
+    probe_in: Union[float, int] = 1.4,
+    probe_out: Union[float, int] = 4.0,
+    volume_cutoff: Union[float, int] = 5.0,
+    nthreads: Optional[int] = None,
+    verbose: bool = False,
+):
+    """_summary_
+
+    Parameters
+    ----------
+    step : Union[float, int], optional
+        _description_, by default 0.6
+    probe_in : Union[float, int], optional
+        _description_, by default 1.4
+    probe_out : Union[float, int], optional
+        _description_, by default 4.0
+    volume_cutoff : Union[float, int], optional
+        _description_, by default 5.0
+    surface : str, optional
+        _description_, by default "SES"
+    nthreads : Optional[int], optional
+        _description_, by default None
+    verbose : bool, optional
+        _description_, by default False
+    """
+    from .main import Molecule
+    from scipy import ndimage
+
+    # Check arguments
+    if type(step) not in [float, int]:
+        raise TypeError("`step` must be a float or an integer.")
+    if type(probe_in) not in [float, int]:
+        raise TypeError("`probe_in` must be a float or an integer.")
+    if type(probe_out) not in [float, int]:
+        raise TypeError("`probe_out` must be a float or an integer.")
+    if type(volume_cutoff) not in [float, int]:
+        raise TypeError("`volume_cutoff` must be a float or an integer.")
+    if nthreads is None:
+        nthreads = os.cpu_count() - 1
+    else:
+        if type(nthreads) not in [int]:
+            raise TypeError("`nthreads` must be a positive integer.")
+        elif nthreads <= 0:
+            raise ValueError("`nthreads` must be a positive integer.")
+    if type(verbose) not in [bool]:
+        raise TypeError("`verbose` must be a boolean.")
+
+    # Convert types
+    if type(step) == int:
+        step = float(step)
+    if type(probe_in) == int:
+        probe_in = float(probe_in)
+    if type(probe_out) == int:
+        probe_out = float(probe_out)
+    if type(volume_cutoff) == int:
+        volume_cutoff = float(volume_cutoff)
+
+    # Step 1: Read the molecule from a file
+    molecule = Molecule(
+        fn, radii=vdw, model=model, nthreads=nthreads, verbose=verbose
+    )
+
+    # Step 2: Model van der Waals surface
+    molecule.vdw(step=step, padding=probe_out)
+
+    # Step 3: Molecule closed by Probe Out
+    # Create a binary structure for representing the Probe Out (PO)
+    sphere = ndimage.generate_binary_structure(3, 1)
+    PO = ndimage.iterate_structure(sphere, round(probe_out / (3 * step))).astype("int8")
+    # Apply binary closing
+    McPO = ndimage.binary_closing(
+        (molecule._grid == 0).astype("int8"), structure=PO, iterations=1
+    ).astype("int8")
+
+    # Step 4: Molecule closed by Probe Out (McPOI) intersect with the Molecule complement (Mc)
+    McPOIMc = numpy.logical_and(McPO, molecule._grid).astype("int8")
+
+    # Step 5: McPOIMc opened by Probe In (PI)
+    PI = ndimage.iterate_structure(sphere, round(probe_in / (3 * step))).astype("int8")
+    cavities = ndimage.binary_opening(McPOIMc, structure=PI, iterations=1).astype(
+        "int32"
+    )
+
+    return cavities
+
+
 def _select_cavities(cavities: numpy.ndarray, selection: List[int]) -> numpy.ndarray:
     """Select cavities in the 3D grid by cavity labels.
 
