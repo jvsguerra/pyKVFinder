@@ -1,0 +1,3 @@
+[box]
+residues = [ ["49", "E", "LEU",], [ "50", "E", "GLY",], [ "51", "E", "THR",], ]
+padding =  3.5

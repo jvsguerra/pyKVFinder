@@ -1,0 +1,111 @@
+[build-system]
+requires = [
+    "setuptools>=62.0",
+    "wheel>=0.37.1",
+    "Cython>=0.29",
+    "numpy>=1.21.5",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyKVFinder"
+description = "Python package to detect and characterize cavities in biomolecular structures"
+authors = [
+    { name = "João V. S. Guerra", email = "jvsguerra@gmail.com" },
+    { name = "Helder V. Ribeiro-Filho" },
+    { name = "Luiz F. G. Alves" },
+    { name = "Pablo W. A. Silva" },
+    { name = "Gabriel E. Jara" },
+    { name = "Leandro O. Bortot" },
+    { name = "José G. C. Pereira" },
+    { name = "Paulo S. Lopes-de-Oliveira" },
+]
+maintainers = [{ name = "João V. S. Guerra", email = "jvsguerra@gmail.com" }]
+license = { file = "LICENSE" }
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.9"
+keywords = [
+    "structural biology",
+    "proteins",
+    "biomolecules",
+    "cavity detection",
+    "cavity characterization",
+    "binding sites",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    'Programming Language :: C',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Topic :: Software Development',
+    'Topic :: Scientific/Engineering',
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: Unix',
+    'Operating System :: MacOS',
+]
+dependencies = [
+    "toml==0.10.2",
+    "numpy==1.26.4",
+    "matplotlib==3.8.4",
+    "plotly==5.21.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = ["pytest==8.1.1", "pytest-cov==5.0.0", "black==24.4.1", "flake8==7.0.0"]
+
+[project.urls]
+homepage = "https://github.com/LBC-LNBio/pyKVFinder/"
+documentation = "https://lbc-lnbio.github.io/pyKVFinder/"
+issues = "https://github.com/LBC-LNBio/pyKVFinder/issues"
+
+[project.scripts]
+pyKVFinder = "pyKVFinder.main:cli"
+
+[tool.setuptools]
+packages = ["pyKVFinder", "pyKVFinder.data", "pyKVFinder.data.tests"]
+py-modules = ["_pyKVFinder"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { attr = "pyKVFinder.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = ["pyKVFinder/argparser.py", "pyKVFinder/__init__.py"]
+
+[tool.cibuildwheel]
+test-requires = "pytest"
+test-command = "pytest {project}/tests/integration -v"
+before-build = [
+    "python3 -m pip install --upgrade pip",
+    "pip3 install certifi",
+    "git clean -fxd build",
+]
+build = ["cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+
+[tool.cibuildwheel.linux]
+archs = ["native"]
+
+[tool.cibuildwheel.macos]
+environment = { CC = "/usr/local/bin/gcc-9", MACOS_DEVELOPMENT_TARGET = "10.9" }
+before-build = ["brew install gcc@9"]
+archs = ["native"]
+repair-wheel-command = ""
+test-skip = "*-macosx_arm64"
+
+[tool.cibuildwheel.windows]
+archs = ["native"]

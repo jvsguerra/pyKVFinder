@@ -1,0 +1,23 @@
+[WimleyWhite]
+# Experimentally determined hydrophobicity scale for proteins at membrane interfaces. Wimley WC, White SH. Nat Struct Biol. 1996 Oct;3(10):842-8.
+# Hydrophilic -> Hydrophobic
+ALA = -0.17
+ARG = -0.81
+ASN = -0.42
+ASP = -1.23
+CYS = 0.24
+GLN = -0.58
+GLU = -2.02
+GLY = -0.01
+HIS = -0.96
+ILE = 0.31
+LEU = 0.56
+LYS = -0.99
+MET = 0.23
+PHE = 1.13
+PRO = -0.45
+SER = -0.13
+THR = -0.14
+TRP = 1.85
+TYR = 0.94
+VAL = -0.07
