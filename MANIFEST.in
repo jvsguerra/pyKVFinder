@@ -1,5 +1,5 @@
 # Include vdw dictionary data file 
-include pyKVFinder/data/vdw.dat
+include pyKVFinder/core/io/vdw/vdw.json
 
 # Include hydrophobicity scales
 include pyKVFinder/data/*.toml

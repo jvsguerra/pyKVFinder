@@ -14,14 +14,14 @@ Python package
 
 Command Line Interface
 ----------------------
-  Usage: pyKVFinder [-h] [-v] [--version] [-b <str>] [-O <str>]\
-                    [-m <int>] [--nthreads <int>] [-d <str>] [-s <float>]\
-                    [-i <float>] [-o <float>] [-V <float>] [-R <float>]\
-                    [-S <str>] [--ignore_backbone] [-D] [--plot_frequencies]\
-                    [--hydropathy [{EisenbergWeiss, HessaHeijne, KyteDoolittle,\
-                    MoonFleming, RadzickaWolfenden, WimleyWhite, ZhaoLondon, <.toml>}]]\
-                    [-B <.toml>] [-L (<.pdb> | <.xyz>)] [--ligand_cutoff <float>]\
-                    (<.pdb> | <.xyz>)
+Usage: pyKVFinder [-h] [-v] [--version] [-b <str>] [-O <str>]\
+                  [-m <int>] [--nthreads <int>] [-d <str>] [-s <float>]\
+                  [-i <float>] [-o <float>] [-V <float>] [-R <float>]\
+                  [-S <str>] [--ignore_backbone] [-D] [--plot_frequencies]\
+                  [--hydropathy [{EisenbergWeiss, HessaHeijne, KyteDoolittle,\
+                  MoonFleming, RadzickaWolfenden, WimleyWhite, ZhaoLondon, <.toml>}]]\
+                  [-B <.toml>] [-L (<.pdb> | <.xyz>)] [--ligand_cutoff <float>]\
+                  (<.pdb> | <.xyz>)
 
 See also
 --------
@@ -30,10 +30,8 @@ See also
 * Documentation: https://lbc-lnbio.github.io/pyKVFinder
 """
 
+__version__ = "1.0.0"
 __name__ = "pyKVFinder"
-__version__ = "0.6.13"
 license = "GNU GPL-3.0 License"
 
-from .utils import *
-from .grid import *
-from .main import *
+from .core import VDW, read_vdw

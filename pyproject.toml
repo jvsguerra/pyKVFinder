@@ -23,7 +23,7 @@ authors = [
 maintainers = [{ name = "João V. S. Guerra", email = "jvsguerra@gmail.com" }]
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = [
     "structural biology",
     "proteins",
@@ -33,14 +33,13 @@ keywords = [
     "binding sites",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     'Programming Language :: C',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -74,7 +73,15 @@ issues = "https://github.com/LBC-LNBio/pyKVFinder/issues"
 pyKVFinder = "pyKVFinder.main:cli"
 
 [tool.setuptools]
-packages = ["pyKVFinder", "pyKVFinder.data", "pyKVFinder.data.tests"]
+packages = [
+    "pyKVFinder",
+    "pyKVFinder.core",
+    "pyKVFinder.core.io",
+    "pyKVFinder.core.io.mmcif",
+    "pyKVFinder.core.io.pdb",
+    "pyKVFinder.core.io.vdw",
+    "pyKVFinder.core.io.xyz",
+]
 py-modules = ["_pyKVFinder"]
 include-package-data = true
 
@@ -95,7 +102,7 @@ before-build = [
     "pip3 install certifi",
     "git clean -fxd build",
 ]
-build = ["cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+build = ["cp310-*", "cp311-*", "cp312-*"]
 
 [tool.cibuildwheel.linux]
 archs = ["native"]
