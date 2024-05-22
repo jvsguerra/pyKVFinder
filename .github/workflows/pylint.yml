@@ -21,7 +21,7 @@ jobs:
 
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files 'pyKVFinder/*.py') --output=pylint.log || true
+        pylint $(git ls-files 'pyKVFinder/*.py') --disable=C0301,W0622 --output=pylint.log || true
     
     - name: Upload pylint report
       uses: actions/upload-artifact@v4
