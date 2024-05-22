@@ -2,26 +2,31 @@
 # under the GNU GPL-3.0 license. Please see 'LICENSE' for further
 # information.
 
+"""
+This subpackage is used for reading van der Waals radii.
+"""
+
 __name__ = "pyKVFinder.core.io.vdw"
 __all__ = ["VDW", "read_vdw"]
 
+import json
 import os
 import pathlib
 from typing import Dict, Optional, Union
 
-VDW = os.path.join(os.path.abspath(os.path.dirname(__file__)), "vdw.dat")
+VDW = os.path.join(os.path.abspath(os.path.dirname(__file__)), "vdw.json")
 
 
 def read_vdw(
     fn: Optional[Union[str, pathlib.Path]] = None
 ) -> Dict[str, Dict[str, float]]:
-    """Reads van der Waals radii from .dat file.
+    """Reads van der Waals radii from .json file.
 
     Parameters
     ---------->
     fn : Optional[Union[str, pathlib.Path]], optional
         A path to a van der Waals radii file, by default None. If None, apply the built-in van der
-        Waals radii file: `vdw.dat`.
+        Waals radii file `vdw.json`.
 
     Returns
     -------
@@ -32,18 +37,13 @@ def read_vdw(
     ------
     TypeError
         `fn` must be a string or a pathlib.Path.
-    ValueError
-        A line in `vdw` has incorrect format. The values must be double
-        tab-separated.
-    ValueError
-        A line in `vdw` has an incorrect radius type for an atom.
 
     Note
     ----
     The van der Waals radii file defines the radius values for each
     atom by residue and when not defined, it uses a generic value
     based on the atom type (see ``van der Waals file template``).
-    The package contains a built-in van der Waals radii file: ``vdw.dat``.
+    The package contains a built-in van der Waals radii file: ``vdw.json``.
 
     See Also
     --------
@@ -53,7 +53,7 @@ def read_vdw(
 
     Example
     -------
-    The ``read_vdw`` function takes the `built-in dictionary <https://github.com/LBC-LNBio/pyKVFinder/blob/master/pyKVFinder/data/vdw.dat>`_ when a *.dat* file is not specified.
+    The ``read_vdw`` function takes the `built-in dictionary <https://github.com/LBC-LNBio/pyKVFinder/blob/master/pyKVFinder/core/io/vdw/vdw.json>`_ when a *.json* file is not specified.
 
     >>> from pyKVFinder import read_vdw
     >>> vdw = read_vdw()
@@ -66,11 +66,12 @@ def read_vdw(
 
         >>> vdw = {'GEN': {'C': 1.66, 'CA': 2.0, 'N': 1.97, 'O': 1.69, 'H': 0.91}}
 
-        * specifying a *.dat* file following template of `van der Waals radii file`.
+        * specifying a *.json* file following template of `van der Waals radii file`.
 
-        >>> with open('vdw.dat', 'w') as f:
-        ...     f.write('>GEN\\nC\\t\\t1.66\\nCA\\t\\t2.00\\nN\\t\\t1.97\\nO\\t\\t1.69\\nH\\t\\t0.91\\n')
-        >>> vdw = read_vdw('vdw.dat')
+        >>> import json
+        >>> with open('vdw.json', 'w') as f:
+        ...     json.dump(vdw, f)
+        >>> vdw = read_vdw('vdw.json')
         >>> vdw
         {'GEN': {'C': 1.66, 'CA': 2.0, 'N': 1.97, 'O': 1.69, 'H': 0.91}}
     """
@@ -82,37 +83,8 @@ def read_vdw(
         # Define default vdw file
         fn = VDW
 
-    # Create vdw dictionary
-    vdw = {}
-
-    # Open fn
-    with open(fn, "r") as f:
-        # Read line with data only (ignore empty lines)
-        lines = [
-            line.replace(" ", "")
-            for line in f.read().splitlines()
-            if line.replace("\t\t", "")
-        ]
-        for line in lines:
-            if not line.startswith("#"):
-                if line.startswith(">"):
-                    res = line.replace(">", "").replace("\t\t", "").replace(" ", "")
-                    vdw[res] = {}
-                else:
-                    try:
-                        atom, radius = line.split("\t\t")
-                    except ValueError:
-                        if len(line.split("\t\t")) != 2:
-                            raise ValueError(
-                                "A line in `vdw` has incorrect format. \
-The values must be double tab-separated."
-                            )
-                    try:
-                        vdw[res][atom] = float(radius)
-                    except ValueError:
-                        raise ValueError(
-                            "A line in `vdw` has an incorrect radius type for \
-an atom."
-                        )
+    # Check if file exists
+    with open(fn, "r", encoding="utf-8") as f:
+        vdw = json.load(f)
 
     return vdw
