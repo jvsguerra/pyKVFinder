@@ -83,6 +83,8 @@ def read_xyz(
         The function takes the `built-in dictionary <https://github.com/LBC-LNBio/pyKVFinder/blob/master/pyKVFinder/core/io/vdw/vdw.json>`_ when the ``vdw`` argument is not specified. If you wish to use a custom van der Waals radii file, you must read it with ``read_vdw`` as shown earlier and pass it as ``read_xyz(xyz, vdw=vdw)``.
 
     """
+    from MDAnalysis import Universe
+
     # Check arguments
     if type(fn) not in [str, pathlib.Path]:
         raise TypeError("`fn` must be a string or a pathlib.Path.")
@@ -91,30 +93,26 @@ def read_xyz(
     if vdw is None:
         vdw = read_vdw(VDW)
 
-    # Create lists
-    atomic = []
+    # Read XYZ file in MDAnalysis.Universe
+    u = Universe(fn, in_memory=True)
+    if u.trajectory.n_frames > 1:
+        raise ValueError("The XYZ file must contain only one frame.")
 
-    # Start resnum
-    resnum = 0
+    # Vectorize lookup
+    radii = numpy.vectorize(lambda atom: vdw["GEN"][atom])
 
-    # Read XYZ file
-    with open(fn, "r", encoding="utf-8") as f:
-        for line in f.readlines():
-            line = line.split()
-            if len(line) == 4:
-                # Get PDB information
-                atom_symbol = line[0]
-                x = float(line[1])
-                y = float(line[2])
-                z = float(line[3])
+    # Load atomic data
+    atomic = numpy.c_[
+        u.atoms.ids,  # atom number (XYZ file does not group atoms in residues)
+        numpy.full(
+            u.atoms.ids.shape, ""
+        ),  # chain identifier (XYZ file does not group atoms in chains)
+        numpy.full(
+            u.atoms.ids.shape, "UNK"
+        ),  # residue name (XYZ file does not group atoms in residues)
+        u.atoms.names,  # atom name
+        u.atoms.positions,  # xyz coordinates
+        radii(u.atoms.names),  # atom radius
+    ]
 
-                # Get radius (generic value)
-                radius = vdw["GEN"][atom_symbol]
-
-                # Get resnum
-                resnum += 1
-
-                # Append data
-                atomic.append([resnum, "A", "UNK", atom_symbol, x, y, z, radius])
-
-    return numpy.asarray(atomic)
+    return atomic
