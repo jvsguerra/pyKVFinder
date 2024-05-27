@@ -13,8 +13,9 @@ import pathlib
 from typing import Dict, Optional, Union
 
 import numpy
+from MDAnalysis import Universe
 
-from ..vdw import VDW, read_vdw
+from ..vdw import VDW, _lookup_radii, read_vdw
 
 
 def read_xyz(
@@ -83,8 +84,6 @@ def read_xyz(
         The function takes the `built-in dictionary <https://github.com/LBC-LNBio/pyKVFinder/blob/master/pyKVFinder/core/io/vdw/vdw.json>`_ when the ``vdw`` argument is not specified. If you wish to use a custom van der Waals radii file, you must read it with ``read_vdw`` as shown earlier and pass it as ``read_xyz(xyz, vdw=vdw)``.
 
     """
-    from MDAnalysis import Universe
-
     # Check arguments
     if type(fn) not in [str, pathlib.Path]:
         raise TypeError("`fn` must be a string or a pathlib.Path.")
@@ -98,21 +97,33 @@ def read_xyz(
     if u.trajectory.n_frames > 1:
         raise ValueError("The XYZ file must contain only one frame.")
 
-    # Vectorize lookup
-    radii = numpy.vectorize(lambda atom: vdw["GEN"][atom])
+    # Check if residues names are available
+    if "resnames" not in u.atoms._SETATTR_WHITELIST:
+        u.add_TopologyAttr("resnames", ["UNK"] * len(u.residues))
+
+    # Check if chain identifiers are available
+    if "chainIDs" not in u.atoms._SETATTR_WHITELIST:
+        u.add_TopologyAttr("chainIDs", [""] * len(u.atoms))
+
+    # Vectorize _lookup_radii function and add radii to topology
+    u.add_TopologyAttr(
+        "radii",
+        numpy.vectorize(_lookup_radii)(
+            vdw,
+            u.atoms.resnames,
+            u.atoms.names,
+            u.atoms.elements,
+        ),
+    )
 
     # Load atomic data
     atomic = numpy.c_[
         u.atoms.ids,  # atom number (XYZ file does not group atoms in residues)
-        numpy.full(
-            u.atoms.ids.shape, ""
-        ),  # chain identifier (XYZ file does not group atoms in chains)
-        numpy.full(
-            u.atoms.ids.shape, "UNK"
-        ),  # residue name (XYZ file does not group atoms in residues)
+        u.atoms.chainIDs,  # chain identifier (XYZ file does not group atoms in chains)
+        u.atoms.resnames,  # residue name (XYZ file does not group atoms in residues)
         u.atoms.names,  # atom name
         u.atoms.positions,  # xyz coordinates
-        radii(u.atoms.names),  # atom radius
+        u.atoms.radii,  # atom radius
     ]
 
     return atomic
