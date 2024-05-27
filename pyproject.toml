@@ -80,8 +80,15 @@ packages = [
     "pyKVFinder.core.io",
     "pyKVFinder.core.io.mmcif",
     "pyKVFinder.core.io.pdb",
+    "pyKVFinder.core.io.pqr",
     "pyKVFinder.core.io.vdw",
     "pyKVFinder.core.io.xyz",
+    "pyKVFinder.md",
+    "pyKVFinder.plugins",
+    "pyKVFinder.plugins.ChimeraXPlugin",
+    "pyKVFinder.plugins.Plugin",
+    "pyKVFinder.plugins.PyMOLPlugin",
+    "pyKVFinder.structure",
 ]
 py-modules = ["_pyKVFinder"]
 include-package-data = true

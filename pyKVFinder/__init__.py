@@ -34,4 +34,7 @@ __version__ = "1.0.0"
 __name__ = "pyKVFinder"
 license = "GNU GPL-3.0 License"
 
-from .core import VDW, read_vdw, read_xyz, read_pdb, read_pqr, read_mol2, read_mmcif
+from .core import VDW, read_mmcif, read_pdb, read_pqr, read_vdw, read_xyz
+from .md import CavityTrajectory, Trajectory
+from .plugins import ChimeraXPlugin, Plugin, PyMOLPlugin
+from .structure import Cavity, Structure
