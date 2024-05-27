@@ -134,7 +134,7 @@ first model."
 
     # Load atomic data
     atomic = numpy.c_[
-        u.atoms.ids,  # atom number (XYZ file does not group atoms in residues)
+        u.atoms.resnums,  # atom number (XYZ file does not group atoms in residues)
         u.atoms.chainIDs,  # chain identifier (XYZ file does not group atoms in chains)
         u.atoms.resnames,  # residue name (XYZ file does not group atoms in residues)
         u.atoms.names,  # atom name

@@ -9,5 +9,6 @@ __name__ = "pyKVFinder.core.io"
 
 from .mmcif import *
 from .pdb import *
+from .pqr import *
 from .vdw import *
 from .xyz import *
