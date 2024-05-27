@@ -17,6 +17,51 @@ from typing import Dict, Optional, Union
 VDW = os.path.join(os.path.abspath(os.path.dirname(__file__)), "vdw.json")
 
 
+def _lookup_radii(vdw: Dict[str, Dict[str, float]], resname: str, atomname: str, atomsymbol: str) -> float:
+    """
+    Look up the van der Waals radius for a given atom in a specific residue.
+
+    Parameters
+    ----------
+    vdw : Dict[str, Dict[str, float]]
+        A dictionary containing radii values.
+    resname : str
+        The name of the residue.
+    atomname : str
+        The name of the atom.
+    atomsymbol : str
+        The element symbol of the atom.
+
+    Returns
+    -------
+    float
+        The van der Waals radius of the atom. If the specific radius is not
+        found, the function falls back to generic values.
+
+    Raises
+    ------
+    KeyError
+        If the radius for the atom or symbol is not found in the provided dictionary.
+        - If `resname` exists in `vdw` but `atomname` is not found in the corresponding dictionary.
+        - If `resname` does not exist in `vdw` and `atomsymbol` is not found in the 'GEN' category.
+    """
+    try:
+        # Look up the radius for the specific residue and atom
+        return vdw.get(resname, vdw["GEN"]).get(
+            atomname.upper(), vdw["GEN"][atomsymbol.upper()]
+        )
+    except KeyError as e:
+        if resname in vdw and atomname.upper() not in vdw[resname]:
+            raise KeyError(
+                f"Van der Waals radius for atom '{atomname}' not found in residue '{resname}'"
+            ) from e
+        if resname not in vdw and atomsymbol.upper() not in vdw["GEN"]:
+            raise KeyError(
+                f"Van der Waals radius for atom symbol '{atomsymbol}' not found in 'GEN' category"
+            ) from e
+        raise e
+
+
 def read_vdw(
     fn: Optional[Union[str, pathlib.Path]] = None
 ) -> Dict[str, Dict[str, float]]:
