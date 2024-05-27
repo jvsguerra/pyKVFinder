@@ -3,7 +3,7 @@
 # information.
 
 """
-This subpackage is used for reading van der Waals radii.
+This subpackage is used for reading van der Waals radii file.
 """
 
 __name__ = "pyKVFinder.core.io.vdw"

@@ -3,7 +3,7 @@
 # information.
 
 """
-This subpackage is used for reading PDB.
+This subpackage is used for reading PDB file format.
 """
 
 __name__ = "pyKVFinder.core.io.pdb"
