@@ -8,4 +8,6 @@ This subpackage is used for reading mmCIF file format.
 
 __name__ = "pyKVFinder.core.io.mmcif"
 
-from .file import read_mmcif
+
+def read_mmcif():
+    pass

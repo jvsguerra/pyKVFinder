@@ -3,9 +3,9 @@
 # information.
 
 """
-This subpackage is used for reading mmCIF file format.
+This subpackage is used for reading MOL2 file format.
 """
 
-__name__ = "pyKVFinder.core.io.mmcif"
+__name__ = "pyKVFinder.core.io.mol"
 
-from .file import read_mmcif
+from .file import read_mol2

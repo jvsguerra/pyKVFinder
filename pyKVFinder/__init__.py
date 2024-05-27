@@ -34,4 +34,4 @@ __version__ = "1.0.0"
 __name__ = "pyKVFinder"
 license = "GNU GPL-3.0 License"
 
-from .core import VDW, read_vdw, read_xyz, read_pdb
+from .core import VDW, read_vdw, read_xyz, read_pdb, read_pqr, read_mol2, read_mmcif

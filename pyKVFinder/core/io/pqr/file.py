@@ -3,9 +3,11 @@
 # information.
 
 """
-This subpackage is used for reading mmCIF file format.
+This subpackage is used for reading PQR file format.
 """
 
-__name__ = "pyKVFinder.core.io.mmcif"
+__name__ = "pyKVFinder.core.io.pqr"
 
-from .file import read_mmcif
+
+def read_pqr():
+    pass
