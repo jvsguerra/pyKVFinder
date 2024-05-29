@@ -54,9 +54,10 @@ classifiers = [
     'Operating System :: MacOS',
 ]
 dependencies = [
-    "toml==0.10.2",
-    "numpy==1.26.4",
+    "biopython==1.83",
     "matplotlib==3.9.0",
+    "MDAnalysis==2.7.0",
+    "numpy==1.26.4",
     "plotly==5.22.0",
     "toml==0.10.2",
 ]
