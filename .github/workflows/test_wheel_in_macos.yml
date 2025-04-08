@@ -24,7 +24,7 @@ jobs:
         
           - name: Install pyKVFinder
             run: |
-                pip install pykvfinder-0.7.3-cp311-cp311-macosx_11_0_arm64.whl
+                pip install pyKVFinder
                 pip install pytest
                 pytest --import-mode=importlib
 
