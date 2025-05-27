@@ -34,14 +34,10 @@ jobs:
           name: artifacts-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
-  run_pykvfinder:
+  runpykvfinder:
     name: Run pyKVFinder
     runs-on: macos-13
     needs: [build_wheels]
-      name: pypi
-      url: https://pypi.org/p/pyKVFinder
-    permissions:
-      id-token: write
 
     steps:
       - uses: actions/setup-python@v5
