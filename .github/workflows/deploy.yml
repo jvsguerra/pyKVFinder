@@ -9,7 +9,7 @@ jobs:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
-      MACOSX_DEPLOYMENT_TARGET: '14.0'
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
