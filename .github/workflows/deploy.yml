@@ -57,7 +57,7 @@ jobs:
         run: | 
           pyKVFinder --version
           pyKVFinder --help
-          pyKVFinder pyKVFinder/tests/data/1FMO.pdb
+          pyKVFinder tests/data/1FMO.pdb
 
       # - name: Publish package distributions to PyPI
       #   uses: pypa/gh-action-pypi-publish@release/v1
