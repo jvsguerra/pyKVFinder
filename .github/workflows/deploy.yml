@@ -57,6 +57,8 @@ jobs:
         run: | 
           pyKVFinder --version
           pyKVFinder --help
+          pwd
+          ls -R
           pyKVFinder pyKVFinder/data/tests/1FMO.pdb
 
       # - name: Publish package distributions to PyPI
