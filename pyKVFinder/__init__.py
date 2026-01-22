@@ -31,9 +31,28 @@ See also
 """
 
 __name__ = "pyKVFinder"
-__version__ = "0.8.4"
-license = "GNU GPL-3.0 License"
+__version__ = "0.9.0"
+__license__ = "GNU GPL-3.0 License"
 
-from .utils import *
-from .grid import *
-from .main import *
+from .grid import (
+    constitutional,
+    depth,
+    detect,
+    export,
+    export_openings,
+    get_vertices,
+    get_vertices_from_file,
+    hydropathy,
+    openings,
+    spatial,
+)
+from .main import Molecule, pyKVFinderResults, run_workflow
+from .utils import (
+    calculate_frequencies,
+    plot_frequencies,
+    read_cavity,
+    read_pdb,
+    read_vdw,
+    read_xyz,
+    write_results,
+)

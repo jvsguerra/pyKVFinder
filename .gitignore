@@ -1,5 +1,13 @@
 # Files to ignore
 
+# uv files
+uv.lock
+.python-version
+
+# C-code
+C/pyKVFinder.py
+C/pyKVFinder_wrap.c
+
 # Debbuging
 pyKVFinder/data/tests/output/
 .vscode/
@@ -13,19 +21,19 @@ examples/md-analysis/data/
 examples/md-analysis/results/
 examples/md-analysis/box.toml
 
-# Conservation analysis 
+# Conservation analysis
 examples/conservation-analysis/data/
 examples/conservation-analysis/results/
 examples/conservation-analysis/box.toml
 
-# Visualization 
+# Visualization
 examples/visualization/data/
 
 # Supramolecular cage analysis
 examples/smc-analysis/data/
 examples/smc-analysis/results/
 
-# Benchmarking 
+# Benchmarking
 tests/performance/data/
 tests/performance/results/
 !tests/performance/scripts/
