@@ -179,6 +179,10 @@ def cli() -> None:
 
     # Cavities were found
     if ncav > 0:
+        # Warn if number of cavities exceeds maximum supported number
+        if ncav > 1352:
+            print("Warning: The number of detected cavities exceeds the supported limit (1352).")
+
         # Spatial characterization
         surface, volume, area = spatial(
             cavities, args.step, None, args.nthreads, args.verbose
@@ -833,7 +837,9 @@ def run_workflow(
     ----
     The cavity nomenclature is based on the integer label. The cavity marked
     with 2, the first integer corresponding to a cavity, is KAA, the cavity
-    marked with 3 is KAB, the cavity marked with 4 is KAC and so on.
+    marked with 3 is KAB, the cavity marked with 4 is KAC and so on. After KZZ,
+    the next cavity is Kaa, Kab, and so on. The naming convention supports up to
+    1352 cavities.
 
     Note
     ----
@@ -1131,6 +1137,10 @@ def run_workflow(
     )
 
     if ncav > 0:
+        # Warn if number of cavities exceeds maximum supported number
+        if ncav > 1352:
+            print("Warning: The number of detected cavities exceeds the supported limit (1352).")
+
         # Spatial characterization
         surface, volume, area = spatial(cavities, step, None, nthreads, verbose)
 
@@ -1571,7 +1581,7 @@ class Molecule(object):
                 [1, 1, 1, ..., 1, 1, 1],
                 [1, 1, 1, ..., 1, 1, 1]]], dtype=int32)
         """
-        from _pyKVFinder import _fill_receptor
+        from pyKVFinder._pyKVFinder import _fill_receptor
 
         # Check arguments
         if type(step) not in [int, float]:
@@ -1697,7 +1707,7 @@ class Molecule(object):
                     [1, 1, 1, ..., 1, 1, 1],
                     [1, 1, 1, ..., 1, 1, 1]]], dtype=int32)
         """
-        from _pyKVFinder import _fill_receptor
+        from pyKVFinder._pyKVFinder import _fill_receptor
 
         # Check arguments
         if type(step) not in [int, float]:
@@ -1762,7 +1772,7 @@ class Molecule(object):
         >>> molecule.volume()
         90.8
         """
-        from _pyKVFinder import _volume
+        from pyKVFinder._pyKVFinder import _volume
 
         if self.grid is not None:
             volume = _volume(

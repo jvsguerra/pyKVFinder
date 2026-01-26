@@ -303,6 +303,14 @@ class TestGetCavityName(unittest.TestCase):
             ["KAA", "KAK", "KAU", "KBE", "KBO", "KBY", "KCI", "KCS", "KDC", "KDM"],
         )
 
+    def test_longer_indexes(self):
+        indexes = list(range(676, 776, 10))
+        cavity_names = [_get_cavity_name(index) for index in indexes]
+        self.assertListEqual(
+            cavity_names,
+            ["Kaa", "Kak", "Kau", "Kbe", "Kbo", "Kby", "Kci", "Kcs", "Kdc", "Kdm"],
+        )
+
 
 class TestGetCavityLabel(unittest.TestCase):
     def test_cavity_names(self):
@@ -320,6 +328,22 @@ class TestGetCavityLabel(unittest.TestCase):
         ]
         labels = [_get_cavity_label(name) for name in cavity_names]
         self.assertListEqual(labels, list(range(2, 100, 10)))
+
+    def test_longer_cavity_names(self):
+        cavity_names = [
+            "Kaa",
+            "Kak",
+            "Kau",
+            "Kbe",
+            "Kbo",
+            "Kby",
+            "Kci",
+            "Kcs",
+            "Kdc",
+            "Kdm",
+        ]
+        labels = [_get_cavity_label(name) for name in cavity_names]
+        self.assertListEqual(labels, list(range(2 + 676, 100 + 676, 10)))
 
     def test_invalid_cavity_name(self):
         for cavity_name in ["AAA", "BAA", "CAA", "kaa", "1"]:
@@ -2339,6 +2363,14 @@ class TestGetOpeningName(unittest.TestCase):
             ["OAA", "OAK", "OAU", "OBE", "OBO", "OBY", "OCI", "OCS", "ODC", "ODM"],
         )
 
+    def test_longer_indexes(self):
+        indexes = list(range(676, 776, 10))
+        opening_names = [_get_opening_name(index) for index in indexes]
+        self.assertListEqual(
+            opening_names,
+            ["Oaa", "Oak", "Oau", "Obe", "Obo", "Oby", "Oci", "Ocs", "Odc", "Odm"],
+        )
+
 
 class TestGetOpeningLabel(unittest.TestCase):
     def test_opening_names(self):
@@ -2356,6 +2388,22 @@ class TestGetOpeningLabel(unittest.TestCase):
         ]
         labels = [_get_opening_label(name) for name in opening_names]
         self.assertListEqual(labels, list(range(2, 100, 10)))
+
+    def test_longer_opening_names(self):
+        opening_names = [
+            "Oaa",
+            "Oak",
+            "Oau",
+            "Obe",
+            "Obo",
+            "Oby",
+            "Oci",
+            "Ocs",
+            "Odc",
+            "Odm",
+        ]
+        labels = [_get_opening_label(name) for name in opening_names]
+        self.assertListEqual(labels, list(range(2 + 676, 100 + 676, 10)))
 
     def test_invalid_opening_name(self):
         self.assertRaises(ValueError, _get_opening_label, "AAA")
